@@ -1,18 +1,26 @@
 // touristAPI.js
 import axios from 'axios';
 
-const API_KEY = 'eab924414fmsh453704db5cac159p1dbe63jsn60ff7f5934c9';
-const BASE_URL = 'https://api.opentripmap.com/0.1/en/places';
+const API_KEY = 'fsq3Snb5zYnMLnIgrG9EgB9BGdaYNjjLafMMOJJE/YIYllo=';
+const BASE_URL = 'https://api.foursquare.com/v3/places';
 
 // Função para buscar pontos turísticos próximos
 export const fetchTouristSpots = async (latitude, longitude) => {
-  const response = await axios.get(`${BASE_URL}/radius`, {
-    params: {
-      apiKey: API_KEY,
-      radius: 5000,
-      lat: latitude,
-      lon: longitude,
-    },
-  });
-  return response.data;
+  try {
+    const response = await axios.get(`${BASE_URL}/search`, {
+      headers: {
+        Authorization: API_KEY, // Adiciona o token de API no cabeçalho
+      },
+      params: {
+        ll: `${latitude},${longitude}`, // Coordenadas no formato `latitude,longitude`
+        radius: 5000, // Raio de busca em metros
+        categories: '16000', // Categoria para "pontos turísticos"
+        limit: 20, // Limita o número de resultados retornados
+      },
+    });
+    return response.data.results || []; // Retorna os pontos turísticos ou uma lista vazia se não houver dados
+  } catch (error) {
+    console.error('Erro ao buscar pontos turísticos:', error);
+    throw new Error('Falha ao buscar pontos turísticos');
+  }
 };

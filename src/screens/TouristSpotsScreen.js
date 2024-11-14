@@ -1,6 +1,6 @@
 // TouristSpotsScreen.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Button, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Button, ActivityIndicator, Alert } from 'react-native';
 import { fetchTouristSpots } from '../services/touristAPI';
 import { db, auth } from '../firebaseConfig';
 import * as Location from 'expo-location';
@@ -13,7 +13,6 @@ const TouristSpotsScreen = () => {
   // Função para capturar a localização do usuário e buscar pontos turísticos próximos
   const loadSpotsNearby = async () => {
     try {
-      // Solicita permissão para acessar a localização do usuário
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setError('Permissão para acessar localização negada');
@@ -21,7 +20,6 @@ const TouristSpotsScreen = () => {
         return;
       }
 
-      // Captura a posição atual do usuário
       const location = await Location.getCurrentPositionAsync({});
       const latitude = location.coords.latitude;
       const longitude = location.coords.longitude;
@@ -47,12 +45,12 @@ const TouristSpotsScreen = () => {
       await db.collection('favorites').add({
         userId: auth.currentUser.uid,
         name: spot.name,
-        description: spot.description,
+        description: spot.categories.map((cat) => cat.name).join(', '),
         date: new Date(),
       });
-      alert('Ponto turístico favoritado!');
+      Alert.alert('Sucesso', 'Ponto turístico favoritado!');
     } catch (error) {
-      alert('Erro ao favoritar o ponto turístico');
+      Alert.alert('Erro', 'Erro ao favoritar o ponto turístico');
     }
   };
 
@@ -70,12 +68,13 @@ const TouristSpotsScreen = () => {
         data={spots}
         renderItem={({ item }) => (
           <View style={{ padding: 10, borderBottomWidth: 1 }}>
-            <Text style={{ fontSize: 18 }}>{item.name}</Text>
-            <Text>{item.description}</Text>
+            <Text style={{ fontSize: 18 }}>{item.name || 'Nome não disponível'}</Text>
+            <Text>{item.location.address || 'Endereço não disponível'}</Text>
+            <Text>{item.categories.map((cat) => cat.name).join(', ')}</Text>
             <Button title="Favoritar" onPress={() => favoriteSpot(item)} />
           </View>
         )}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.fsq_id}
       />
     </View>
   );

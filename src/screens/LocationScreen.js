@@ -27,8 +27,11 @@ const LocationScreen = () => {
 
         // Busca pontos turísticos próximos com base nas coordenadas do usuário
         const data = await fetchTouristSpots(location.coords.latitude, location.coords.longitude);
-        setSpots(data.features || []); // `data.features` contém os pontos turísticos no OpenTripMap
-
+        if (data && data.features) {
+          setSpots(data.features); // `data.features` contém os pontos turísticos no OpenTripMap
+        } else {
+          setErrorMsg('Nenhum ponto turístico encontrado.');
+        }
       } catch (error) {
         setErrorMsg('Erro ao carregar pontos turísticos.');
       } finally {
@@ -67,11 +70,11 @@ const LocationScreen = () => {
       )}
       <FlatList
         data={spots}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id || item.properties.xid} // Use xid como alternativa se id não estiver disponível
         renderItem={({ item }) => (
           <View style={styles.spotContainer}>
             <Text style={styles.spotName}>{item.properties.name || 'Sem nome'}</Text>
-            <Text>{item.properties.kinds || 'Sem categoria'}</Text>
+            <Text>{item.properties.kinds ? item.properties.kinds.replace(/_/g, ', ') : 'Sem categoria'}</Text>
           </View>
         )}
       />
