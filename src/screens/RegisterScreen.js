@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text, Alert } from 'react-native';
 import { auth } from '../firebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -10,7 +11,7 @@ const RegisterScreen = ({ navigation }) => {
   // Função para registrar o usuário com email e senha
   const handleRegister = async () => {
     try {
-      await auth.createUserWithEmailAndPassword(email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       Alert.alert("Registro bem-sucedido", "Você foi registrado com sucesso!");
       navigation.navigate('Login'); // Navega de volta para a tela de login
     } catch (error) {
