@@ -2,9 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, Alert, Text } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
-import firebase from 'firebase/app';
-import 'firebase/auth';
 import { auth } from '../firebaseConfig';
+import { GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword } from 'firebase/auth';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -12,7 +11,7 @@ const LoginScreen = ({ navigation }) => {
 
   // Configuração do Google Login
   const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: 'AIzaSyAviLSzrpn3SXCLqgxFFK6B5y-whKm7qgU',
+    androidClientId: 'YOUR_ANDROID_CLIENT_ID', // Substitua pelo seu ID do cliente do Google
   });
 
   // Lida com o login com Google
@@ -21,10 +20,10 @@ const LoginScreen = ({ navigation }) => {
       const { id_token } = response.params;
 
       // Configura a credencial do Firebase com o token de ID do Google
-      const credential = firebase.auth.GoogleAuthProvider.credential(id_token);
-      auth.signInWithCredential(credential)
+      const credential = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, credential)
         .then(() => {
-          navigation.navigate('Main'); // Navega para a tela principal após login
+          navigation.navigate('TouristSpots'); // Navega para a tela principal após login
         })
         .catch(error => console.error("Erro de autenticação", error));
     }
@@ -33,8 +32,8 @@ const LoginScreen = ({ navigation }) => {
   // Função para login com email e senha
   const handleLogin = async () => {
     try {
-      await auth.signInWithEmailAndPassword(email, password);
-      navigation.navigate('Main'); // Navega para a tela principal após o login
+      await signInWithEmailAndPassword(auth, email, password);
+      navigation.navigate('TouristSpots'); // Navega para a tela principal após o login
     } catch (error) {
       Alert.alert("Erro no login", error.message);
     }

@@ -14,13 +14,16 @@ const Stack = createStackNavigator();
 const App = () => {
   useEffect(() => {
     const setupNotifications = async () => {
-      await Notifications.requestPermissionsAsync();
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        await Notifications.requestPermissionsAsync();
+      }
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "Descubra novos lugares!",
           body: "Que tal explorar um novo ponto turístico?",
         },
-        trigger: null,
+        trigger: { seconds: 5 }, // Notificação acionada após 5 segundos como exemplo
       });
     };
     setupNotifications();
