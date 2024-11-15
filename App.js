@@ -7,8 +7,9 @@ import { Alert } from 'react-native';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
-import LocationScreen from './src/screens/LocationScreen'; // Tela de pontos turísticos
-import FavoritesScreen from './src/screens/FavoritesScreen'; // Tela de favoritos
+import LocationScreen from './src/screens/LocationScreen';
+import FavoritesScreen from './src/screens/FavoritesScreen';
+import Layout from './src/components/Layout'; // Layout padrão com footer
 
 const Stack = createStackNavigator();
 
@@ -39,13 +40,19 @@ const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login' }} />
+        <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login', headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Registrar' }} />
-        <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
-        <Stack.Screen name="LocationScreen" component={LocationScreen} options={{ title: 'Pontos Turísticos' }} />
-        <Stack.Screen name="FavoritesScreen" component={FavoritesScreen} options={{ title: 'Favoritos' }} />
+        {/* As telas abaixo usam o Layout padrão com footer */}
+        <Stack.Screen name="Home">
+          {(props) => <Layout {...props} component={HomeScreen} />}
+        </Stack.Screen>
+        <Stack.Screen name="Location">
+          {(props) => <Layout {...props} component={LocationScreen} />}
+        </Stack.Screen>
+        <Stack.Screen name="Favorites">
+          {(props) => <Layout {...props} component={FavoritesScreen} />}
+        </Stack.Screen>
       </Stack.Navigator>
-
     </NavigationContainer>
   );
 };

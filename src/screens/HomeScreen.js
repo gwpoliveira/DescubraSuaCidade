@@ -1,93 +1,95 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome'; // Biblioteca de ícones
-import { auth } from '../firebaseConfig';
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const HomeScreen = ({ navigation }) => {
-  const user = auth.currentUser;
-
   return (
-    <View style={styles.container}>
-      {/* Cabeçalho */}
-      <View style={styles.header}>
-        <Text style={styles.headerText}>
-          Olá, {user?.displayName || 'Visitante'}!
-        </Text>
-        <Text style={styles.subHeaderText}>O que você deseja explorar hoje?</Text>
+    <ImageBackground
+      source={require('../assets/background.jpg')} // Substitua pelo caminho do seu arquivo de imagem
+      style={styles.background}
+    >
+      <View style={styles.overlay}>
+        <Text style={styles.header}>Descubra Sua Cidade</Text>
+        <Text style={styles.subheader}>Explore pontos turísticos incríveis e personalize seus favoritos!</Text>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.optionButton}
+            onPress={() => navigation.navigate('Location')}
+          >
+            <Icon name="map-marker" size={40} color="#fff" />
+            <Text style={styles.buttonText}>Pontos Turísticos</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionButton}
+            onPress={() => navigation.navigate('Favorites')}
+          >
+            <Icon name="heart" size={40} color="#fff" />
+            <Text style={styles.buttonText}>Meus Favoritos</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      {/* Botões de Navegação */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.optionButton}
-          onPress={() => navigation.navigate('LocationScreen')} // Certifique-se de usar o mesmo nome registrado
-        >
-          <Icon name="map-marker" size={30} color="#fff" />
-          <Text style={styles.buttonText}>Pontos Turísticos</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.optionButton}
-          onPress={() => navigation.navigate('FavoritesScreen')} // Certifique-se de usar o mesmo nome registrado
-        >
-          <Icon name="heart" size={30} color="#fff" />
-          <Text style={styles.buttonText}>Favoritos</Text>
-        </TouchableOpacity>
-
-      </View>
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    resizeMode: 'cover',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Overlay para escurecer o fundo
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   header: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    alignItems: 'center',
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 10,
+  },
+  subheader: {
+    fontSize: 16,
+    color: '#d9d9d9',
+    textAlign: 'center',
     marginBottom: 30,
   },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  subHeaderText: {
-    fontSize: 16,
-    color: '#e0e0e0',
-    marginTop: 5,
-  },
   buttonContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between', // Espaçamento entre os botões
     alignItems: 'center',
+    width: '100%', // Largura completa para alinhamento central
+    maxWidth: 400, // Limita o tamanho máximo dos botões no container
+    marginHorizontal: 'auto', // Centraliza horizontalmente
   },
   optionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#4CAF50',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 30,
     borderRadius: 10,
-    marginBottom: 20,
-    width: '80%',
+    alignItems: 'center',
+    flex: 1, // Faz com que os botões compartilhem o espaço igualmente
+    marginHorizontal: 10, // Garante espaçamento horizontal consistente entre os botões
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
   },
   buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
     color: '#fff',
-    marginLeft: 10,
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
+
 
 export default HomeScreen;
