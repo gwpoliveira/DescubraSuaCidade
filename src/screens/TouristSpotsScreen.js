@@ -41,15 +41,27 @@ const TouristSpotsScreen = () => {
 
   // Função para favoritar um ponto turístico
   const favoriteSpot = async (spot) => {
+    // Verifica se o usuário está autenticado
+    if (!auth.currentUser) {
+      Alert.alert("Erro", "Usuário não autenticado.");
+      return;
+    }
+
     try {
+      // Adiciona o ponto turístico aos favoritos no Firestore
       await db.collection('favorites').add({
         userId: auth.currentUser.uid,
-        name: spot.name,
-        description: spot.categories.map((cat) => cat.name).join(', '),
+        name: spot.name || 'Nome não disponível',
+        address: spot.location?.address || 'Endereço não disponível',
+        categories: spot.categories?.map((cat) => cat.name).join(', ') || 'Sem categoria',
+        latitude: spot.geocodes?.main?.latitude || null,
+        longitude: spot.geocodes?.main?.longitude || null,
         date: new Date(),
       });
       Alert.alert('Sucesso', 'Ponto turístico favoritado!');
     } catch (error) {
+      // Log detalhado do erro para análise
+      console.error('Erro ao favoritar:', error);
       Alert.alert('Erro', 'Erro ao favoritar o ponto turístico');
     }
   };
@@ -69,8 +81,8 @@ const TouristSpotsScreen = () => {
         renderItem={({ item }) => (
           <View style={{ padding: 10, borderBottomWidth: 1 }}>
             <Text style={{ fontSize: 18 }}>{item.name || 'Nome não disponível'}</Text>
-            <Text>{item.location.address || 'Endereço não disponível'}</Text>
-            <Text>{item.categories.map((cat) => cat.name).join(', ')}</Text>
+            <Text>{item.location?.address || 'Endereço não disponível'}</Text>
+            <Text>{item.categories?.map((cat) => cat.name).join(', ') || 'Sem categoria'}</Text>
             <Button title="Favoritar" onPress={() => favoriteSpot(item)} />
           </View>
         )}

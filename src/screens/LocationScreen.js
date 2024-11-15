@@ -27,8 +27,8 @@ const LocationScreen = () => {
 
         // Busca pontos turísticos próximos com base nas coordenadas do usuário
         const data = await fetchTouristSpots(location.coords.latitude, location.coords.longitude);
-        if (data && data.features) {
-          setSpots(data.features); // `data.features` contém os pontos turísticos no OpenTripMap
+        if (data && data.length) {
+          setSpots(data); // Define os pontos turísticos da API do Foursquare
         } else {
           setErrorMsg('Nenhum ponto turístico encontrado.');
         }
@@ -70,11 +70,14 @@ const LocationScreen = () => {
       )}
       <FlatList
         data={spots}
-        keyExtractor={(item) => item.id || item.properties.xid} // Use xid como alternativa se id não estiver disponível
+        keyExtractor={(item) => item.fsq_id} // fsq_id é a chave única fornecida pelo Foursquare
         renderItem={({ item }) => (
           <View style={styles.spotContainer}>
-            <Text style={styles.spotName}>{item.properties.name || 'Sem nome'}</Text>
-            <Text>{item.properties.kinds ? item.properties.kinds.replace(/_/g, ', ') : 'Sem categoria'}</Text>
+            <Text style={styles.spotName}>{item.name || 'Sem nome'}</Text>
+            <Text>{item.location?.address || 'Endereço não disponível'}</Text>
+            <Text>
+              {item.categories?.map((cat) => cat.name).join(', ') || 'Sem categoria'}
+            </Text>
           </View>
         )}
       />
