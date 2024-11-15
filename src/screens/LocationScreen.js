@@ -1,8 +1,10 @@
-// LocationScreen.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import * as Location from 'expo-location';
-import { fetchTouristSpots } from '../services/touristAPI';
+import { fetchTouristSpots } from '../services/touristAPI'; // Função para buscar pontos turísticos próximos
+import { db, auth } from '../firebaseConfig'; // Firebase Config
+import { collection, addDoc } from 'firebase/firestore';
+import Icon from 'react-native-vector-icons/FontAwesome'; // Importa os ícones
 
 const LocationScreen = () => {
   const [location, setLocation] = useState(null);
@@ -10,39 +12,60 @@ const LocationScreen = () => {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  useEffect(() => {
-    const getLocationAndSpots = async () => {
-      try {
-        // Solicita permissão de localização
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setErrorMsg('Permissão para acessar localização foi negada');
-          setLoading(false);
-          return;
-        }
-
-        // Obtém a localização atual do usuário
-        const location = await Location.getCurrentPositionAsync({});
-        setLocation(location);
-
-        // Busca pontos turísticos próximos com base nas coordenadas do usuário
-        const data = await fetchTouristSpots(location.coords.latitude, location.coords.longitude);
-        if (data && data.length) {
-          setSpots(data); // Define os pontos turísticos da API do Foursquare
-        } else {
-          setErrorMsg('Nenhum ponto turístico encontrado.');
-        }
-      } catch (error) {
-        setErrorMsg('Erro ao carregar pontos turísticos.');
-      } finally {
+  // Função para solicitar permissão de localização e obter a localização do usuário
+  const getLocationAndSpots = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permissão para acessar localização foi negada');
         setLoading(false);
+        return;
       }
-    };
 
+      const userLocation = await Location.getCurrentPositionAsync({});
+      setLocation(userLocation);
+
+      const data = await fetchTouristSpots(
+        userLocation.coords.latitude,
+        userLocation.coords.longitude
+      );
+      setSpots(data);
+    } catch (error) {
+      setErrorMsg('Erro ao carregar pontos turísticos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     getLocationAndSpots();
   }, []);
 
-  // Exibe mensagem de erro, se houver
+  // Função para adicionar o ponto turístico aos favoritos
+  const favoriteSpot = async (spot) => {
+    try {
+      if (!auth.currentUser) {
+        alert('Você precisa estar autenticado para favoritar locais.');
+        return;
+      }
+
+      await addDoc(collection(db, 'favorites'), {
+        userId: auth.currentUser.uid,
+        name: spot.name || 'Nome não disponível',
+        address: spot.location?.address || 'Endereço não disponível',
+        latitude: spot.geocodes?.main?.latitude || null,
+        longitude: spot.geocodes?.main?.longitude || null,
+        dateAdded: new Date(),
+      });
+
+      alert('Local adicionado aos favoritos!');
+    } catch (error) {
+      console.error('Erro ao adicionar favorito:', error);
+      alert('Erro ao favoritar o local.');
+    }
+  };
+
+  // Exibe mensagem de erro se não houver permissão
   if (errorMsg) {
     return (
       <View style={styles.centered}>
@@ -51,7 +74,7 @@ const LocationScreen = () => {
     );
   }
 
-  // Exibe o indicador de carregamento enquanto os dados estão sendo carregados
+  // Exibe um indicador de carregamento enquanto os dados estão sendo carregados
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -62,7 +85,9 @@ const LocationScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Pontos Turísticos Próximos</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Pontos Turísticos Próximos</Text>
+      </View>
       {location && (
         <Text style={styles.locationText}>
           Sua localização: Latitude {location.coords.latitude.toFixed(4)}, Longitude {location.coords.longitude.toFixed(4)}
@@ -70,12 +95,15 @@ const LocationScreen = () => {
       )}
       <FlatList
         data={spots}
-        keyExtractor={(item) => item.fsq_id} // fsq_id é a chave única fornecida pelo Foursquare
+        keyExtractor={(item) => item.fsq_id}
         renderItem={({ item }) => (
-          <View style={styles.spotContainer}>
+          <View style={styles.spotCard}>
+            <TouchableOpacity style={styles.favoriteButton} onPress={() => favoriteSpot(item)}>
+              <Icon name="heart" size={28} color="red" />
+            </TouchableOpacity>
             <Text style={styles.spotName}>{item.name || 'Sem nome'}</Text>
-            <Text>{item.location?.address || 'Endereço não disponível'}</Text>
-            <Text>
+            <Text style={styles.spotAddress}>{item.location?.address || 'Endereço não disponível'}</Text>
+            <Text style={styles.spotCategories}>
               {item.categories?.map((cat) => cat.name).join(', ') || 'Sem categoria'}
             </Text>
           </View>
@@ -88,25 +116,55 @@ const LocationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  headerContainer: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginBottom: 10,
   },
   header: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#fff',
   },
   locationText: {
     fontSize: 16,
+    textAlign: 'center',
     marginBottom: 10,
+    color: '#555',
   },
-  spotContainer: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+  spotCard: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
   spotName: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  spotAddress: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  spotCategories: {
+    fontSize: 14,
+    color: '#999',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
   centered: {
     flex: 1,
