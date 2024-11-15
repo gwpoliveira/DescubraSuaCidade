@@ -20,7 +20,7 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.optionButton}
-          onPress={() => navigation.navigate('LocationScreen')}
+          onPress={() => navigation.navigate('LocationScreen')} // Certifique-se de usar o mesmo nome registrado
         >
           <Icon name="map-marker" size={30} color="#fff" />
           <Text style={styles.buttonText}>Pontos Turísticos</Text>
@@ -28,11 +28,12 @@ const HomeScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.optionButton}
-          onPress={() => navigation.navigate('FavoritesScreen')}
+          onPress={() => navigation.navigate('FavoritesScreen')} // Certifique-se de usar o mesmo nome registrado
         >
           <Icon name="heart" size={30} color="#fff" />
           <Text style={styles.buttonText}>Favoritos</Text>
         </TouchableOpacity>
+
       </View>
     </View>
   );

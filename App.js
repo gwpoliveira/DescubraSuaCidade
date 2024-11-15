@@ -42,9 +42,10 @@ const App = () => {
         <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login' }} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Registrar' }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
-        <Stack.Screen name="Location" component={LocationScreen} options={{ title: 'Pontos Turísticos' }} />
-        <Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Favoritos' }} />
+        <Stack.Screen name="LocationScreen" component={LocationScreen} options={{ title: 'Pontos Turísticos' }} />
+        <Stack.Screen name="FavoritesScreen" component={FavoritesScreen} options={{ title: 'Favoritos' }} />
       </Stack.Navigator>
+
     </NavigationContainer>
   );
 };

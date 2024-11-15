@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity, ToastAndroid } from 'react-native';
 import * as Location from 'expo-location';
 import { fetchTouristSpots } from '../services/touristAPI'; // Função para buscar pontos turísticos próximos
 import { db, auth } from '../firebaseConfig'; // Firebase Config
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Importa os ícones
 
 const LocationScreen = () => {
@@ -11,8 +11,22 @@ const LocationScreen = () => {
   const [spots, setSpots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [favorites, setFavorites] = useState([]);
 
-  // Função para solicitar permissão de localização e obter a localização do usuário
+  // Carregar favoritos do Firestore
+  const loadFavorites = async () => {
+    if (!auth.currentUser) return;
+
+    const q = query(
+      collection(db, 'favorites'),
+      where('userId', '==', auth.currentUser.uid)
+    );
+    const querySnapshot = await getDocs(q);
+    const favoriteIds = querySnapshot.docs.map((doc) => doc.data().fsq_id);
+    setFavorites(favoriteIds);
+  };
+
+  // Solicitar permissão de localização e obter a localização do usuário
   const getLocationAndSpots = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -39,13 +53,19 @@ const LocationScreen = () => {
 
   useEffect(() => {
     getLocationAndSpots();
+    loadFavorites();
   }, []);
 
-  // Função para adicionar o ponto turístico aos favoritos
+  // Adicionar ponto turístico aos favoritos
   const favoriteSpot = async (spot) => {
     try {
       if (!auth.currentUser) {
         alert('Você precisa estar autenticado para favoritar locais.');
+        return;
+      }
+
+      if (favorites.includes(spot.fsq_id)) {
+        alert('Este local já está nos seus favoritos.');
         return;
       }
 
@@ -55,17 +75,18 @@ const LocationScreen = () => {
         address: spot.location?.address || 'Endereço não disponível',
         latitude: spot.geocodes?.main?.latitude || null,
         longitude: spot.geocodes?.main?.longitude || null,
+        fsq_id: spot.fsq_id,
         dateAdded: new Date(),
       });
 
-      alert('Local adicionado aos favoritos!');
+      setFavorites((prev) => [...prev, spot.fsq_id]);
+      ToastAndroid.show('Local adicionado aos favoritos!', ToastAndroid.SHORT);
     } catch (error) {
       console.error('Erro ao adicionar favorito:', error);
       alert('Erro ao favoritar o local.');
     }
   };
 
-  // Exibe mensagem de erro se não houver permissão
   if (errorMsg) {
     return (
       <View style={styles.centered}>
@@ -74,7 +95,6 @@ const LocationScreen = () => {
     );
   }
 
-  // Exibe um indicador de carregamento enquanto os dados estão sendo carregados
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -98,8 +118,15 @@ const LocationScreen = () => {
         keyExtractor={(item) => item.fsq_id}
         renderItem={({ item }) => (
           <View style={styles.spotCard}>
-            <TouchableOpacity style={styles.favoriteButton} onPress={() => favoriteSpot(item)}>
-              <Icon name="heart" size={28} color="red" />
+            <TouchableOpacity
+              style={styles.favoriteButton}
+              onPress={() => favoriteSpot(item)}
+            >
+              <Icon
+                name={favorites.includes(item.fsq_id) ? 'heart' : 'heart-o'}
+                size={28}
+                color="red"
+              />
             </TouchableOpacity>
             <Text style={styles.spotName}>{item.name || 'Sem nome'}</Text>
             <Text style={styles.spotAddress}>{item.location?.address || 'Endereço não disponível'}</Text>
