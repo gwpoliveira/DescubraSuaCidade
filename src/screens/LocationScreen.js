@@ -5,6 +5,11 @@ import { fetchTouristSpots } from '../services/touristAPI'; // Função para bus
 import { db, auth } from '../firebaseConfig'; // Firebase Config
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Importa os ícones
+import { requestNotificationPermissions } from '../services/notificationSetup';
+import * as Notifications from 'expo-notifications';
+
+
+
 
 const LocationScreen = () => {
   const [location, setLocation] = useState(null);
@@ -63,12 +68,12 @@ const LocationScreen = () => {
         alert('Você precisa estar autenticado para favoritar locais.');
         return;
       }
-
+  
       if (favorites.includes(spot.fsq_id)) {
         alert('Este local já está nos seus favoritos.');
         return;
       }
-
+  
       await addDoc(collection(db, 'favorites'), {
         userId: auth.currentUser.uid,
         name: spot.name || 'Nome não disponível',
@@ -78,14 +83,30 @@ const LocationScreen = () => {
         fsq_id: spot.fsq_id,
         dateAdded: new Date(),
       });
-
+  
       setFavorites((prev) => [...prev, spot.fsq_id]);
+  
       ToastAndroid.show('Local adicionado aos favoritos!', ToastAndroid.SHORT);
+  
+      // Solicitar permissão para notificações
+      const hasPermission = await requestNotificationPermissions();
+      if (hasPermission) {
+        // Enviar notificação
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'Encontro de Turistas!',
+            body: `No local ${spot.name}, está acontecendo um encontro de turistas de Teresina. Você será bem-vindo à festa!`,
+            data: { spot },
+          },
+          trigger: null, // Envia imediatamente
+        });
+      }
     } catch (error) {
       console.error('Erro ao adicionar favorito:', error);
       alert('Erro ao favoritar o local.');
     }
   };
+  
 
   if (errorMsg) {
     return (
