@@ -1,28 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, ImageBackground } from 'react-native';
 import { auth } from '../firebaseConfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigation = useNavigation();
 
+  // Verifica o estado de autenticação
+  useEffect(() => {
+    const checkAuth = async () => {
+      const cachedUser = await AsyncStorage.getItem('user');
+      if (cachedUser) {
+        navigation.navigate('Home');
+      } else {
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            await AsyncStorage.setItem('user', JSON.stringify(user));
+            navigation.navigate('Home');
+          } else {
+            await AsyncStorage.removeItem('user');
+          }
+        });
+      }
+    };
+
+    checkAuth();
+  }, []);
+
   // Função para login com email e senha
   const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await AsyncStorage.setItem('user', JSON.stringify(userCredential.user));
       navigation.navigate('Home'); // Navega para a tela Home
     } catch (error) {
       Alert.alert('Erro no login', error.message);
     }
   };
 
+
   return (
     <ImageBackground
       source={{
-        uri: 'https://img.freepik.com/vetores-premium/fundo-ondulado-gradiente-colorido_677411-3454.jpg?w=360', // Substitua pelo link da sua imagem
+        uri: 'https://img.freepik.com/vetores-premium/fundo-ondulado-gradiente-colorido_677411-3454.jpg?w=360',
       }}
       style={styles.background}
     >
@@ -63,12 +88,12 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Sobreposição escura para melhorar a visibilidade do conteúdo
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)', // Fundo branco com opacidade
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     padding: 20,
     borderRadius: 10,
     width: '90%',
