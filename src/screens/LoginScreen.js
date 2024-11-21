@@ -1,48 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ImageBackground } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ImageBackground, Switch } from 'react-native';
 import { auth } from '../firebaseConfig';
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false); // Estado para a caixinha de marcação
   const navigation = useNavigation();
 
-  // Verifica o estado de autenticação
+  // Verifica se o login foi salvo no AsyncStorage
   useEffect(() => {
-    const checkAuth = async () => {
-      const cachedUser = await AsyncStorage.getItem('user');
-      if (cachedUser) {
+    const checkRememberedLogin = async () => {
+      const cachedUser = await AsyncStorage.getItem('rememberMe');
+      if (cachedUser === 'true') {
         navigation.navigate('Home');
-      } else {
-        onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            await AsyncStorage.setItem('user', JSON.stringify(user));
-            navigation.navigate('Home');
-          } else {
-            await AsyncStorage.removeItem('user');
-          }
-        });
       }
     };
 
-    checkAuth();
+    checkRememberedLogin();
   }, []);
 
   // Função para login com email e senha
   const handleLogin = async () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await AsyncStorage.setItem('user', JSON.stringify(userCredential.user));
+
+      // Salva a preferência de "Lembrar login" no AsyncStorage
+      if (rememberMe) {
+        await AsyncStorage.setItem('rememberMe', 'true');
+      } else {
+        await AsyncStorage.removeItem('rememberMe');
+      }
+
       navigation.navigate('Home'); // Navega para a tela Home
     } catch (error) {
       Alert.alert('Erro no login', error.message);
     }
   };
-
 
   return (
     <ImageBackground
@@ -71,6 +68,14 @@ const LoginScreen = () => {
             onChangeText={setPassword}
             secureTextEntry
           />
+          <View style={styles.rememberMeContainer}>
+            <Text style={styles.rememberMeText}>Lembrar login</Text>
+            <Switch
+              value={rememberMe}
+              onValueChange={setRememberMe}
+              thumbColor={rememberMe ? '#4CAF50' : '#ccc'}
+            />
+          </View>
           <Button title="Entrar" onPress={handleLogin} color="#4CAF50" />
           <Text style={styles.registerText} onPress={() => navigation.navigate('Register')}>
             Não tem uma conta? Registre-se aqui
@@ -114,6 +119,17 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
     backgroundColor: '#fff',
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 15,
+  },
+  rememberMeText: {
+    fontSize: 16,
+    color: '#333',
   },
   registerText: {
     color: '#4CAF50',
